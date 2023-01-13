@@ -1,36 +1,28 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+Discussion Thread: https://community.prismic.io/t/webhook-delay-between-the-webhook-and-ref-update-mechanism/12140
 
-## Getting Started
+Steps
 
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
+1. npm ci
+2. update secret in `./pages/api/prismic.js`
+3. update api url in `./prismic/index.js`
+4. update the data you want to query in `./pages/pageA.js` & `./pages/pageB.js` (please query different document type)
+5. exec npm run dev and use ngrok let prismic webhook can hit your api endpoint
+6. update prismic webhook url & secret in your dashboard
+7. update the document you query in `pageA` and check the result in your terminal
+8. you need to try many times and you will find sometimes you got the old content (incorrect ref) instead of latest content
+9. update the api url from `https://your-repo-name.cdn.prismic.io/api/v2` to `https://your-repo-name.prismic.io/api/v2` (without `.cdn`)
+10. repeat step 7 & step 8 and you will always get the latest content so I am guessing is CDN issue
+11. keep the api url without `.cdn` and update `./pages/api/prismic.js` with the following code
+```js
+// await res.revalidate('/pageA');
+await Promise.all([
+  res.revalidate('/pageA'),
+  res.revalidate('/pageB'),
+]);
 ```
+12. repeat step 7 & step 8, check the `ref` in your terminal and you will find sometimes two documents using different `ref`, one is the old ref
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Conclusion (just guessing)
 
-You can start editing the page by modifying `pages/index.js`. The page auto-updates as you edit the file.
-
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.js`.
-
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
-
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+1. `cdn` cause the delay between webhook and ref update mechanism
+2. as long as I use `Promise.all` to revalidate page some page still get the old content, I don't know why...
